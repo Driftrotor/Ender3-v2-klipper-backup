@@ -196,3 +196,140 @@ sudo wpa_cli -i wlan0 reconfigure
 
 it should report back "OK".
 we are good to go.
+
+################################
+----klipper backups-------------
+################################
+
+create github repo--- this is the back up place to keep the files eg. ender3-v2-backups
+
+next you need to create a token to be able to push updates to that repo
+got to settings...dev...personal access token...fine grained token
+from there you can set up the token to link with the repo you just made.
+permisions to set are...
+read/write access to code & workflows
+
+after that is set up
+run these scripts in ssh one by one
+
+
+cd ~ git clone https://github.com/Staubgeborener/klipper-backup klipper-backup-main
+chmod +x ./klipper-backup-main/*.sh && ./klipper-backup-main/install.sh
+
+
+
+cd ~/printer_data/config
+
+
+
+wget -O /home/pi/printer_data/config/autocommit.sh https://raw.githubusercontent.com/EricZimmerman/VoronTools/main/autocommit.sh
+
+
+
+nano /home/pi/printer_data/config/autocommit.sh
+# this one opens the file to make sure your using the correct web interface... comment / uncomment what you need to #
+
+
+
+chmod +x autocommit.sh
+
+
+
+git init -b main
+
+
+
+###   now we need to generate the git location + the token to push updates to git   ###
+###   https://github_pat_<token_number>github.com/ <your git hub> / <repo name> .git   ###
+###   it should look like this above   ###
+enter this...
+
+git remote add origin <the bit above>
+
+
+
+git remote -v
+
+this will test it
+
+
+
+ git config --global user.email "your@email.com"
+ git config --global user.name "your name"
+
+enter these or the script will error out
+
+
+
+cd klipper-backup
+
+ls -a
+
+sudo nano .env
+
+this is the pace to set up what gets backed up (most is already done just remove what you dont want)
+you also need to add in the "repo name" & "the token" at the top
+
+ctr + x to save
+
+
+
+next check the .gitignore is set up to not expose your settings (IMPORTANT)
+
+sudo nano .gitignore
+
+it should contain the .env file name
+
+
+
+now we got to kiauh...
+
+cd
+
+kiauh/kiauh.sh
+
+select 4
+
+select 8
+
+run g-code shell script
+
+this allows the script to run
+
+
+that should be it for the ssh part
+
+
+now copy this into your MOON RAKER CONF
+
+[update_manager client klipper-backup]
+type: git_repo
+path: ~/klipper-backup
+origin: https://github.com/Staubgeborener/klipper-backup.git
+install_script: install.sh
+is_system_service: False
+primary_branch: main
+
+
+
+now copy this into you PRINTER.CFG
+
+[gcode_macro update_git]
+gcode:
+    RUN_SHELL_COMMAND CMD=update_git_script
+
+[gcode_shell_command update_git_script]
+command: bash /home/pi/klipper-backup/script.sh
+timeout: 90.0
+verbose: True
+
+
+now restart your printer
+
+a button should be added to your macros
+this is a simple button to push an update to github
+
+your all set!
+
+
+
